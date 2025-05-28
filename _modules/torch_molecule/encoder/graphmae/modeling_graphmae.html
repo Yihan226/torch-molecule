@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Search" href="../../../../search.html" />
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2024.08.06 -->
-        <title>torch_molecule.encoder.edgepred.modeling_edgepred - torch-molecule 0.1 documentation</title>
+        <title>torch_molecule.encoder.graphmae.modeling_graphmae - torch-molecule 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?v=302659d7" />
@@ -259,19 +259,18 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <h1>Source code for torch_molecule.encoder.edgepred.modeling_edgepred</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+          <h1>Source code for torch_molecule.encoder.graphmae.modeling_graphmae</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Type</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Type</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Data</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">GNN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dataloader</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoaderMaskingPred</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..constant</span><span class="w"> </span><span class="kn">import</span> <span class="n">GNN_ENCODER_MODELS</span><span class="p">,</span> <span class="n">GNN_ENCODER_READOUTS</span><span class="p">,</span> <span class="n">GNN_ENCODER_PARAMS</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseMolecularEncoder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">...utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">graph_from_smiles</span>
@@ -279,59 +278,87 @@
 <span class="n">ALLOWABLE_ENCODER_MODELS</span> <span class="o">=</span> <span class="n">GNN_ENCODER_MODELS</span>
 <span class="n">ALLOWABLE_ENCODER_READOUTS</span> <span class="o">=</span> <span class="n">GNN_ENCODER_READOUTS</span>
 
-<div class="viewcode-block" id="EdgePredMolecularEncoder">
-<a class="viewcode-back" href="../../../../api/encoder.html#torch_molecule.encoder.edgepred.modeling_edgepred.EdgePredMolecularEncoder">[docs]</a>
+<div class="viewcode-block" id="GraphMAEMolecularEncoder">
+<a class="viewcode-back" href="../../../../api/encoder.html#torch_molecule.encoder.graphmae.modeling_graphmae.GraphMAEMolecularEncoder">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">EdgePredMolecularEncoder</span><span class="p">(</span><span class="n">BaseMolecularEncoder</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This encoder implements a GNN-based model for molecular representation learning</span>
-<span class="sd">    using the edge prediction.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GraphMAEMolecularEncoder</span><span class="p">(</span><span class="n">BaseMolecularEncoder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;GraphMAE: Self-Supervised Masked Graph Autoencoders</span>
 <span class="sd">    </span>
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    - Paper: Strategies for Pre-training Graph Neural Networks (ICLR 2020) https://arxiv.org/abs/1905.12265</span>
-<span class="sd">    - Code: https://github.com/snap-stanford/pretrain-gnns/tree/master/chem</span>
-
+<span class="sd">    - Paper: https://arxiv.org/abs/2205.10803</span>
+<span class="sd">    - Code: https://github.com/THUDM/GraphMAE/tree/main/chem</span>
+<span class="sd">    </span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
+<span class="sd">    mask_rate : float, default=0.15</span>
+<span class="sd">        Fraction of nodes to mask during training.</span>
+<span class="sd">    mask_edge : bool, default=False</span>
+<span class="sd">        Whether to mask edges in addition to nodes.</span>
+<span class="sd">    predictor_type : str, default=&quot;gin&quot;</span>
+<span class="sd">        Type of predictor network to use for reconstruction.</span>
+<span class="sd">        Options: [&quot;gin&quot;, &quot;gcn&quot;, &quot;linear&quot;]</span>
+<span class="sd">    </span>
 <span class="sd">    num_layer : int, default=5</span>
-<span class="sd">        Number of GNN layers.</span>
+<span class="sd">        Number of message passing layers in the GNN.</span>
 <span class="sd">    hidden_size : int, default=300</span>
-<span class="sd">        Dimension of hidden node features.</span>
+<span class="sd">        Dimension of hidden node representations.</span>
 <span class="sd">    drop_ratio : float, default=0.5</span>
 <span class="sd">        Dropout probability.</span>
 <span class="sd">    norm_layer : str, default=&quot;batch_norm&quot;</span>
-<span class="sd">        Type of normalization layer to use. One of [&quot;batch_norm&quot;, &quot;layer_norm&quot;, &quot;instance_norm&quot;, &quot;graph_norm&quot;, &quot;size_norm&quot;, &quot;pair_norm&quot;].</span>
+<span class="sd">        Type of normalization to use.</span>
+<span class="sd">        Options: [&quot;batch_norm&quot;, &quot;layer_norm&quot;, &quot;instance_norm&quot;, &quot;graph_norm&quot;, &quot;size_norm&quot;, &quot;pair_norm&quot;]</span>
+<span class="sd">    </span>
 <span class="sd">    encoder_type : str, default=&quot;gin-virtual&quot;</span>
-<span class="sd">        Type of GNN architecture to use.</span>
+<span class="sd">        Type of GNN encoder to use.</span>
+<span class="sd">        Options: [&quot;gin-virtual&quot;, &quot;gcn-virtual&quot;, &quot;gin&quot;, &quot;gcn&quot;]</span>
 <span class="sd">    readout : str, default=&quot;sum&quot;</span>
-<span class="sd">        Method for aggregating node features to obtain graph-level representations.</span>
+<span class="sd">        Pooling method to use for graph-level representations.</span>
+<span class="sd">        Options: [&quot;sum&quot;, &quot;mean&quot;, &quot;max&quot;]</span>
+<span class="sd">    </span>
 <span class="sd">    batch_size : int, default=128</span>
-<span class="sd">        Number of samples per batch for training.</span>
+<span class="sd">        Batch size for training and inference.</span>
 <span class="sd">    epochs : int, default=500</span>
-<span class="sd">        Maximum number of training epochs.</span>
+<span class="sd">        Number of training epochs.</span>
 <span class="sd">    learning_rate : float, default=0.001</span>
 <span class="sd">        Learning rate for optimizer.</span>
-<span class="sd">    grad_clip_value : float, optional</span>
-<span class="sd">        Maximum norm of gradients for gradient clipping.</span>
+<span class="sd">    grad_clip_value : Optional[float], default=None</span>
+<span class="sd">        Maximum norm of gradients for gradient clipping. No clipping if None.</span>
 <span class="sd">    weight_decay : float, default=0.0</span>
-<span class="sd">        L2 regularization strength.</span>
+<span class="sd">        L2 regularization factor.</span>
+<span class="sd">    </span>
 <span class="sd">    use_lr_scheduler : bool, default=False</span>
-<span class="sd">        Whether to use learning rate scheduler.</span>
+<span class="sd">        Whether to use a learning rate scheduler.</span>
 <span class="sd">    scheduler_factor : float, default=0.5</span>
-<span class="sd">        Factor by which to reduce learning rate when plateau is reached.</span>
+<span class="sd">        Factor by which to reduce learning rate when using scheduler.</span>
 <span class="sd">    scheduler_patience : int, default=5</span>
 <span class="sd">        Number of epochs with no improvement after which learning rate will be reduced.</span>
+<span class="sd">    </span>
 <span class="sd">    verbose : bool, default=False</span>
-<span class="sd">        Whether to print progress information during training.</span>
+<span class="sd">        Whether to display progress bars and logs.</span>
+<span class="sd">    model_name : str, default=&quot;GraphMAEMolecularEncoder&quot;</span>
+<span class="sd">        Name of the model.</span>
+<span class="sd">    </span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from torch_molecule import GraphMAEMolecularEncoder</span>
+<span class="sd">    &gt;&gt;&gt; encoder = GraphMAEMolecularEncoder(hidden_size=128, epochs=100)</span>
+<span class="sd">    &gt;&gt;&gt; encoder.fit([&quot;CC(=O)OC1=CC=CC=C1C(=O)O&quot;, &quot;CCO&quot;, &quot;C1=CC=CC=C1&quot;])</span>
+<span class="sd">    &gt;&gt;&gt; representations = encoder.encode([&quot;CCO&quot;])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Task related parameters</span>
+    <span class="n">mask_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.15</span>
+    <span class="n">mask_edge</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># whether to mask edges</span>
+    <span class="n">predictor_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gin&quot;</span> <span class="c1"># one of [&quot;gin&quot;, &quot;gcn&quot;, &quot;linear&quot;]</span>
+
     <span class="c1"># Model parameters</span>
     <span class="n">num_layer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
     <span class="n">hidden_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">300</span>
     <span class="n">drop_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>
-    <span class="n">norm_layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;batch_norm&quot;</span>
+    <span class="n">norm_layer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;batch_norm&quot;</span> <span class="c1"># one of [&quot;batch_norm&quot;, &quot;layer_norm&quot;, &quot;instance_norm&quot;, &quot;graph_norm&quot;, &quot;size_norm&quot;, &quot;pair_norm&quot;]</span>
     
-    <span class="n">encoder_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gin-virtual&quot;</span>
-    <span class="n">readout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sum&quot;</span>
+    <span class="n">encoder_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gin-virtual&quot;</span> <span class="c1"># one of [&quot;gin-virtual&quot;, &quot;gcn-virtual&quot;, &quot;gin&quot;, &quot;gcn&quot;]</span>
+    <span class="n">readout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sum&quot;</span> <span class="c1"># one of [&quot;sum&quot;, &quot;mean&quot;, &quot;max&quot;]</span>
     
     <span class="c1"># Training parameters</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span>
@@ -342,12 +369,12 @@
     
     <span class="c1"># Scheduler parameters</span>
     <span class="n">use_lr_scheduler</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="n">scheduler_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>
-    <span class="n">scheduler_patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">scheduler_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="c1"># if use_lr_scheduler is True</span>
+    <span class="n">scheduler_patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span> <span class="c1"># if use_lr_scheduler is True</span>
     
     <span class="c1"># Other parameters</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;EdgePredMolecularEncoder&quot;</span>
+    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;GraphMAEMolecularEncoder&quot;</span>
     
     <span class="c1"># Non-init fields</span>
     <span class="n">fitting_loss</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -361,28 +388,38 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid encoder_model: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">encoder_type</span><span class="si">}</span><span class="s2">. Currently only </span><span class="si">{</span><span class="n">ALLOWABLE_ENCODER_MODELS</span><span class="si">}</span><span class="s2"> are supported.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">readout</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ALLOWABLE_ENCODER_READOUTS</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid encoder_readout: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">readout</span><span class="si">}</span><span class="s2">. Currently only </span><span class="si">{</span><span class="n">ALLOWABLE_ENCODER_READOUTS</span><span class="si">}</span><span class="s2"> are supported.&quot;</span><span class="p">)</span>
-        
+
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_param_names</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">GNN_ENCODER_PARAMS</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get parameter names for the estimator.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        List[str]</span>
+<span class="sd">            List of parameter names that can be used for model configuration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;mask_rate&quot;</span><span class="p">,</span> <span class="s2">&quot;mask_edge&quot;</span><span class="p">,</span> <span class="s2">&quot;predictor_type&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">GNN_ENCODER_PARAMS</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_model_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checkpoint</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;num_layer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_layer</span><span class="p">,</span>
             <span class="s2">&quot;hidden_size&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span>
-            <span class="s2">&quot;encoder_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder_type</span><span class="p">,</span>
             <span class="s2">&quot;drop_ratio&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">drop_ratio</span><span class="p">,</span>
             <span class="s2">&quot;norm_layer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm_layer</span><span class="p">,</span>
             <span class="s2">&quot;readout&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">readout</span><span class="p">,</span>
+            <span class="s2">&quot;encoder_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder_type</span><span class="p">,</span>
+            <span class="s2">&quot;predictor_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">predictor_type</span><span class="p">,</span>
+            <span class="s2">&quot;mask_edge&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_edge</span>
         <span class="p">}</span>
         
         <span class="k">if</span> <span class="n">checkpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="s2">&quot;hyperparameters&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Checkpoint missing &#39;hyperparameters&#39; key&quot;</span><span class="p">)</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="n">hyperparameters</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">]</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">hyperparameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
             
         <span class="k">return</span> <span class="n">params</span>
-    
+        
     <span class="k">def</span><span class="w"> </span><span class="nf">_convert_to_pytorch_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert numpy arrays to PyTorch Geometric data format.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -395,7 +432,7 @@
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">smiles_or_mol</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
             <span class="n">graph</span> <span class="o">=</span> <span class="n">graph_from_smiles</span><span class="p">(</span><span class="n">smiles_or_mol</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">g</span> <span class="o">=</span> <span class="n">Data</span><span class="p">()</span>
-            <span class="n">g</span><span class="o">.</span><span class="n">num_nodes</span> <span class="o">=</span> <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;num_nodes&quot;</span><span class="p">]</span>
+            <span class="c1"># g.num_nodes = graph[&quot;num_nodes&quot;]</span>
             <span class="n">g</span><span class="o">.</span><span class="n">edge_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">graph</span><span class="p">[</span><span class="s2">&quot;edge_index&quot;</span><span class="p">])</span>
 
             <span class="k">del</span> <span class="n">graph</span><span class="p">[</span><span class="s2">&quot;num_nodes&quot;</span><span class="p">]</span>
@@ -416,7 +453,6 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_setup_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup optimization components including optimizer and learning rate scheduler.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">)</span>
         <span class="n">scheduler</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_lr_scheduler</span><span class="p">:</span>
@@ -432,12 +468,12 @@
 
         <span class="k">return</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">scheduler</span>
     
-<div class="viewcode-block" id="EdgePredMolecularEncoder.fit">
-<a class="viewcode-back" href="../../../../api/encoder.html#torch_molecule.encoder.edgepred.modeling_edgepred.EdgePredMolecularEncoder.fit">[docs]</a>
+<div class="viewcode-block" id="GraphMAEMolecularEncoder.fit">
+<a class="viewcode-back" href="../../../../api/encoder.html#torch_molecule.encoder.graphmae.modeling_graphmae.GraphMAEMolecularEncoder.fit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">X_train</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;EdgePredMolecularEncoder&quot;</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;GraphMAEMolecularEncoder&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the model to the training data with optional validation set.</span>
 
 <span class="sd">        Parameters</span>
@@ -446,10 +482,10 @@
 <span class="sd">            Training set input molecular structures as SMILES strings</span>
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        self : EdgePredMolecularEncoder</span>
+<span class="sd">        self : GraphMAEMolecularEncoder</span>
 <span class="sd">            Fitted estimator</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_class</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">initialize_parameters</span><span class="p">()</span>
         <span class="n">optimizer</span><span class="p">,</span> <span class="n">scheduler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setup_optimizers</span><span class="p">()</span>
@@ -457,12 +493,14 @@
         <span class="c1"># Prepare datasets and loaders</span>
         <span class="n">X_train</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_inputs</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">return_rdkit_mol</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">train_dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_pytorch_data</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
-        <span class="n">train_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
-            <span class="n">train_dataset</span><span class="p">,</span>
-            <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
-            <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span>
-        <span class="p">)</span>
+
+        <span class="n">train_loader</span> <span class="o">=</span> <span class="n">DataLoaderMaskingPred</span><span class="p">(</span>
+            <span class="n">train_dataset</span><span class="p">,</span> 
+            <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> 
+            <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_workers</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> 
+            <span class="n">mask_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_rate</span><span class="p">,</span> 
+            <span class="n">mask_edge</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_edge</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">fitting_loss</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epochs</span><span class="p">):</span>
@@ -495,25 +533,25 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span>
             <span class="k">else</span> <span class="n">train_loader</span>
         <span class="p">)</span>
-
+    
         <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
             <span class="n">batch</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
             <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+            <span class="n">loss_atom</span><span class="p">,</span> <span class="n">loss_edge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_atom</span> <span class="o">+</span> <span class="n">loss_edge</span>
             <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_clip_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_clip_value</span><span class="p">)</span>
             <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
             <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 
-            <span class="c1"># Update progress bar if using tqdm</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
-                <span class="n">iterator</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">({</span><span class="s2">&quot;Epoch&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Loss&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+                <span class="n">iterator</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">({</span><span class="s2">&quot;Epoch&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Loss&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Loss_atom&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">loss_atom</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Loss_edge&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">loss_edge</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
 
         <span class="k">return</span> <span class="n">losses</span>
 
-<div class="viewcode-block" id="EdgePredMolecularEncoder.encode">
-<a class="viewcode-back" href="../../../../api/encoder.html#torch_molecule.encoder.edgepred.modeling_edgepred.EdgePredMolecularEncoder.encode">[docs]</a>
+<div class="viewcode-block" id="GraphMAEMolecularEncoder.encode">
+<a class="viewcode-back" href="../../../../api/encoder.html#torch_molecule.encoder.graphmae.modeling_graphmae.GraphMAEMolecularEncoder.encode">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">return_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;np&quot;</span><span class="p">,</span> <span class="s2">&quot;pt&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;pt&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Encode molecules into vector representations.</span>
 

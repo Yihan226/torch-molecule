@@ -282,13 +282,13 @@
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">GraphDITMolecularGenerator</span><span class="p">(</span><span class="n">BaseMolecularGenerator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This generator implements the graph diffusion transformer for </span>
-<span class="sd">    (multi-conditional and unconditional) molecular generation.</span>
+<span class="sd">    This generator implements the graph diffusion transformer for (multi-conditional and unconditional) molecular generation.</span>
 
-<span class="sd">    Paper: Graph Diffusion Transformers for Multi-Conditional Molecular Generation </span>
-<span class="sd">    (https://openreview.net/forum?id=cfrDLD1wfO)</span>
-
-<span class="sd">    Reference Code: https://github.com/liugangcode/Graph-DiT</span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    - Graph Diffusion Transformers for Multi-Conditional Molecular Generation. NeurIPS 2024.</span>
+<span class="sd">      https://openreview.net/forum?id=cfrDLD1wfO</span>
+<span class="sd">    - Implementation: https://github.com/liugangcode/Graph-DiT</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -333,6 +333,7 @@
 <span class="sd">    verbose : bool, default=False</span>
 <span class="sd">        Whether to display progress bars and logs</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    
     <span class="c1"># Model parameters</span>
     <span class="n">num_layer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>
     <span class="n">hidden_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1152</span>
@@ -527,11 +528,6 @@
         <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_clip_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">param_groups</span><span class="p">:</span>
-                <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;max_norm&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_clip_value</span><span class="p">)</span>
-                <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;norm_type&quot;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
-
         <span class="n">scheduler</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_lr_scheduler</span><span class="p">:</span>
             <span class="n">scheduler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">ReduceLROnPlateau</span><span class="p">(</span>
@@ -572,9 +568,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">fitting_epoch</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epochs</span><span class="p">):</span>
             <span class="n">train_losses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_epoch</span><span class="p">(</span><span class="n">train_loader</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">fitting_loss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">train_losses</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fitting_loss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">train_losses</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
             <span class="k">if</span> <span class="n">scheduler</span><span class="p">:</span>
-                <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">train_losses</span><span class="p">))</span>
+                <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">train_losses</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">fitting_epoch</span> <span class="o">=</span> <span class="n">epoch</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_fitted_</span> <span class="o">=</span> <span class="kc">True</span>
@@ -602,8 +598,10 @@
             <span class="n">noisy_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_noise</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">batched_data</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">node_mask</span><span class="p">)</span>
 
             <span class="n">loss</span><span class="p">,</span> <span class="n">loss_X</span><span class="p">,</span> <span class="n">loss_E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">noisy_data</span><span class="p">,</span> <span class="n">true_X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">true_E</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">lw_X</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lw_X</span><span class="p">,</span> <span class="n">lw_E</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lw_E</span><span class="p">)</span>
-            
             <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_clip_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_clip_value</span><span class="p">)</span>
+
             <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
             <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
             

@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Search" href="../../../../search.html" />
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2024.08.06 -->
-        <title>torch_molecule.predictor.rpgnn.modeling_rpgnn - torch-molecule 0.1 documentation</title>
+        <title>torch_molecule.generator.graph_ga.oracle - torch-molecule 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?v=302659d7" />
@@ -259,85 +259,108 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <h1>Source code for torch_molecule.predictor.rpgnn.modeling_rpgnn</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Type</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+          <h1>Source code for torch_molecule.generator.graph_ga.oracle</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomForestRegressor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rdkit</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chem</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...utils.graph.features</span><span class="w"> </span><span class="kn">import</span> <span class="n">getmorganfingerprint</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">RPGNN</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..gnn.modeling_gnn</span><span class="w"> </span><span class="kn">import</span> <span class="n">GNNMolecularPredictor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">...utils.search</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">ParameterSpec</span><span class="p">,</span>
-    <span class="n">ParameterType</span><span class="p">,</span>
-<span class="p">)</span>
-
-<div class="viewcode-block" id="RPGNNMolecularPredictor">
-<a class="viewcode-back" href="../../../../api/predictor.html#torch_molecule.predictor.rpgnn.modeling_rpgnn.RPGNNMolecularPredictor">[docs]</a>
-<span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">RPGNNMolecularPredictor</span><span class="p">(</span><span class="n">GNNMolecularPredictor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This predictor implements a GNN model based on Relational pooling.</span>
-
-<span class="sd">    The full name of RPGNN is Relational Pooling for Graph Representations.</span>
-
-<span class="sd">    References</span>
-<span class="sd">    ----------</span>
-<span class="sd">    - Relational Pooling for Graph Representations.</span>
-<span class="sd">      https://arxiv.org/abs/1903.02541</span>
-<span class="sd">    - Reference Code: https://github.com/PurdueMINDS/RelationalPooling/tree/master?tab=readme-ov-file</span>
-
+<div class="viewcode-block" id="Oracle">
+<a class="viewcode-back" href="../../../../api/generator.html#torch_molecule.generator.graph_ga.oracle.Oracle">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Oracle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The default Oracle class for scoring molecules in GraphGA.</span>
+<span class="sd">    </span>
+<span class="sd">    This class wraps predictive models (like RandomForestRegressor) to score molecules</span>
+<span class="sd">    based on their properties. It handles conversion of SMILES to fingerprints.</span>
+<span class="sd">    </span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    num_perm : int, default=3</span>
-<span class="sd">        TODO: Add description</span>
-<span class="sd">    fixed_size : int, default=10 </span>
-<span class="sd">        TODO: Add description</span>
-<span class="sd">    num_node_feature : int, default=9</span>
-<span class="sd">        TODO: Add description</span>
+<span class="sd">    models : List[Any], optional</span>
+<span class="sd">        List of trained models that implement a predict method.</span>
+<span class="sd">        If None, RandomForestRegressors will be created when fit is called.</span>
+<span class="sd">    num_task : int, default=1</span>
+<span class="sd">        Number of properties to predict.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
-    <span class="c1"># RPGNN-specific parameter</span>
-    <span class="n">num_perm</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
-    <span class="n">fixed_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
-    <span class="n">num_node_feature</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">9</span>
-    <span class="c1"># Override parent defaults</span>
-    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;RPGNNMolecularPredictor&quot;</span>
-    <span class="n">model_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">RPGNN</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">RPGNN</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    
-    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__post_init__</span><span class="p">()</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_param_names</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;num_perm&quot;</span><span class="p">,</span> <span class="s2">&quot;fixed_size&quot;</span><span class="p">,</span> <span class="s2">&quot;num_node_feature&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">GNNMolecularPredictor</span><span class="o">.</span><span class="n">_get_param_names</span><span class="p">()</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_default_search_space</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">search_space</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_get_default_search_space</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">search_space</span><span class="p">[</span><span class="s2">&quot;num_perm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParameterSpec</span><span class="p">(</span><span class="n">ParameterType</span><span class="o">.</span><span class="n">INTEGER</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
-        <span class="n">search_space</span><span class="p">[</span><span class="s2">&quot;fixed_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ParameterSpec</span><span class="p">(</span><span class="n">ParameterType</span><span class="o">.</span><span class="n">INTEGER</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">search_space</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_model_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checkpoint</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="n">base_params</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_get_model_params</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">checkpoint</span> <span class="ow">and</span> <span class="s2">&quot;hyperparameters&quot;</span> <span class="ow">in</span> <span class="n">checkpoint</span><span class="p">:</span>
-            <span class="n">base_params</span><span class="p">[</span><span class="s2">&quot;num_perm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">][</span><span class="s2">&quot;num_perm&quot;</span><span class="p">]</span>
-            <span class="n">base_params</span><span class="p">[</span><span class="s2">&quot;fixed_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">][</span><span class="s2">&quot;fixed_size&quot;</span><span class="p">]</span>
-            <span class="n">base_params</span><span class="p">[</span><span class="s2">&quot;num_node_feature&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">[</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">][</span><span class="s2">&quot;num_node_feature&quot;</span><span class="p">]</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">models</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_task</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="n">models</span> <span class="k">if</span> <span class="n">models</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="n">RandomForestRegressor</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_task</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_task</span> <span class="o">=</span> <span class="n">num_task</span> <span class="k">if</span> <span class="n">models</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">models</span><span class="p">)</span>
+        
+    <span class="k">def</span><span class="w"> </span><span class="nf">_convert_to_fingerprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">molecules</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert SMILES or RDKit molecules to fingerprints.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">molecules</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">getmorganfingerprint</span><span class="p">(</span><span class="n">Chem</span><span class="o">.</span><span class="n">MolFromSmiles</span><span class="p">(</span><span class="n">mol</span><span class="p">))</span> <span class="k">for</span> <span class="n">mol</span> <span class="ow">in</span> <span class="n">molecules</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">base_params</span><span class="p">[</span><span class="s2">&quot;num_perm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_perm</span>
-            <span class="n">base_params</span><span class="p">[</span><span class="s2">&quot;fixed_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_size</span>
-            <span class="n">base_params</span><span class="p">[</span><span class="s2">&quot;num_node_feature&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_node_feature</span>
-        <span class="n">base_params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;graph_pooling&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">base_params</span></div>
-
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">getmorganfingerprint</span><span class="p">(</span><span class="n">mol</span><span class="p">)</span> <span class="k">for</span> <span class="n">mol</span> <span class="ow">in</span> <span class="n">molecules</span><span class="p">])</span>
+    
+<div class="viewcode-block" id="Oracle.fit">
+<a class="viewcode-back" href="../../../../api/generator.html#torch_molecule.generator.graph_ga.oracle.Oracle.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the underlying models with training data.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X_train : List[str] or List[RDKit.Mol]</span>
+<span class="sd">            Training molecules as SMILES strings or RDKit Mol objects.</span>
+<span class="sd">        y_train : np.ndarray</span>
+<span class="sd">            Training labels with shape (n_samples, num_task).</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self : Oracle</span>
+<span class="sd">            Fitted oracle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">X_train_fp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_fingerprint</span><span class="p">(</span><span class="n">X_train</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_task</span><span class="p">):</span>
+            <span class="n">nan_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y_train</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
+            <span class="n">y_train_</span> <span class="o">=</span> <span class="n">y_train</span><span class="p">[:,</span> <span class="n">i</span><span class="p">][</span><span class="n">nan_mask</span><span class="p">]</span>
+            <span class="n">X_train_fp_</span> <span class="o">=</span> <span class="n">X_train_fp</span><span class="p">[</span><span class="n">nan_mask</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train_fp_</span><span class="p">,</span> <span class="n">y_train_</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="bp">self</span></div>
 
     
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">molecules</span><span class="p">,</span> <span class="n">target_values</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score molecules based on their predicted properties.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        molecules : List[str] or List[RDKit.Mol]</span>
+<span class="sd">            Molecules to score as SMILES strings or RDKit Mol objects.</span>
+<span class="sd">        target_values : np.ndarray,</span>
+<span class="sd">            Scores will be based on distance to these targets.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        List[float]</span>
+<span class="sd">            Scores for each molecule.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_fingerprint</span><span class="p">(</span><span class="n">molecules</span><span class="p">)</span>
+        <span class="n">scores_list</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">fp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fps</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_task</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">([</span><span class="n">fp</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">scores_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">score</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mol_scores</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_task</span><span class="p">):</span>
+                    <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">([</span><span class="n">fp</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                    
+                    <span class="k">if</span> <span class="n">target_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">target_values</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">idx</span><span class="p">]):</span>
+                        <span class="c1"># Lower score for values closer to target</span>
+                        <span class="n">target</span> <span class="o">=</span> <span class="n">target_values</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">idx</span><span class="p">]</span>
+                        <span class="n">dist</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
+                        <span class="n">mol_scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span>
+                        
+                <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">mol_scores</span><span class="p">)</span>  <span class="c1"># Lower is better when using distances</span>
+                <span class="n">scores_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">score</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">scores_list</span></div>
+
 </pre></div>
         </article>
       </div>
