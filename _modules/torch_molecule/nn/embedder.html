@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" />
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2024.08.06 -->
-        <title>torch_molecule.nn.embedder - torch-molecule 0.1 documentation</title>
+        <title>torch_molecule.nn.embedder - torch-molecule (0.1.0) documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=302659d7" />
@@ -165,7 +165,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">torch-molecule 0.1 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">torch-molecule (0.1.0) documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -189,7 +189,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
   
   
-  <span class="sidebar-brand-text">torch-molecule 0.1 documentation</span>
+  <span class="sidebar-brand-text">torch-molecule (0.1.0) documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -359,32 +359,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span> <span class="o">=</span> <span class="n">num_classes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout_prob</span> <span class="o">=</span> <span class="n">dropout_prob</span>
 
-<div class="viewcode-block" id="CategoricalEmbedder.token_drop">
-<a class="viewcode-back" href="../../../api/nn.html#torch_molecule.nn.embedder.CategoricalEmbedder.token_drop">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">token_drop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">force_drop_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Drops labels to enable classifier-free guidance.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        labels : torch.Tensor</span>
-<span class="sd">            Tensor of integer labels.</span>
-<span class="sd">        force_drop_ids : torch.Tensor or None, optional</span>
-<span class="sd">            Boolean mask to force specific labels to be dropped.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.Tensor</span>
-<span class="sd">            Labels with some entries replaced by a dropout token.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">force_drop_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">drop_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">labels</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_prob</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">drop_ids</span> <span class="o">=</span> <span class="n">force_drop_ids</span> <span class="o">==</span> <span class="mi">1</span>
-        <span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">drop_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">labels</span></div>
-
-
 <div class="viewcode-block" id="CategoricalEmbedder.forward">
 <a class="viewcode-back" href="../../../api/nn.html#torch_molecule.nn.embedder.CategoricalEmbedder.forward">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">train</span><span class="p">,</span> <span class="n">force_drop_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -406,11 +380,21 @@
 <span class="sd">            Embedded label representations, with optional noise added during training.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
         <span class="n">use_dropout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_prob</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">train</span> <span class="ow">and</span> <span class="n">use_dropout</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">force_drop_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_drop</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">force_drop_ids</span><span class="p">)</span>
+        <span class="n">drop_ids</span> <span class="o">=</span> <span class="n">force_drop_ids</span> <span class="o">==</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">train</span> <span class="ow">and</span> <span class="n">use_dropout</span><span class="p">):</span>
+            <span class="n">drop_ids_rand</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">labels</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout_prob</span>
+            <span class="k">if</span> <span class="n">force_drop_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">drop_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">drop_ids</span><span class="p">,</span> <span class="n">drop_ids_rand</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">drop_ids</span> <span class="o">=</span> <span class="n">drop_ids_rand</span>
+        
+        <span class="k">if</span> <span class="n">use_dropout</span><span class="p">:</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">drop_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
         <span class="n">embeddings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_table</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
-        <span class="k">if</span> <span class="kc">True</span> <span class="ow">and</span> <span class="n">train</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">train</span><span class="p">:</span>
             <span class="n">noise</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span>
             <span class="n">embeddings</span> <span class="o">=</span> <span class="n">embeddings</span> <span class="o">+</span> <span class="n">noise</span>
         <span class="k">return</span> <span class="n">embeddings</span></div>
@@ -512,7 +496,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=2709fde1"></script>
+</div><script src="../../../_static/documentation_options.js?v=432faeb9"></script>
     <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/scripts/furo.js?v=5fa4622c"></script>
