@@ -72,7 +72,7 @@ See the [List of Supported Models](#list-of-supported-models) section for all av
 | BFGNNMolecularPredictor | torch-scatter |
 | GRINMolecularPredictor | torch-scatter |
 
-**For models that require `torch-scatter`: Install using the following command: `pip install torch-scatter -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html`, e.g.,
+**For models that require `torch-scatter`:** Install using the following command: `pip install torch-scatter -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html`, e.g.,
 
 > `pip install torch-scatter -f https://data.pyg.org/whl/torch-2.7.1+cu128.html`
 
@@ -201,14 +201,18 @@ predictions = model.predict(smiles_list)
 | Model        | Reference           |
 |--------------|---------------------|
 | MoAMa        | [Motif-aware Attribute Masking for Molecular Graph Pre-training. LoG 2024](https://arxiv.org/abs/2309.04589) |
-| GraphMAE        | [GraphMAE: Self-Supervised Masked Graph Autoencoders. KDD 2022](https://arxiv.org/abs/2205.10803) |
+| GraphMAE     | [GraphMAE: Self-Supervised Masked Graph Autoencoders. KDD 2022](https://arxiv.org/abs/2205.10803) |
 | AttrMasking  | [Strategies for Pre-training Graph Neural Networks. ICLR 2020](https://arxiv.org/abs/1905.12265) |
 | ContextPred  | [Strategies for Pre-training Graph Neural Networks. ICLR 2020](https://arxiv.org/abs/1905.12265) |
 | EdgePred     | [Strategies for Pre-training Graph Neural Networks. ICLR 2020](https://arxiv.org/abs/1905.12265) |
 | InfoGraph    | [InfoGraph: Unsupervised and Semi-supervised Graph-Level Representation Learning via Mutual Information Maximization. ICLR 2020](https://arxiv.org/abs/1908.01000) |
 | Supervised   | Supervised pretraining |
-| Pretrained   | More than ten pretrained models from [Hugging Face](https://huggingface.co) |
-
+| Pretrained   | [GPT2-ZINC-87](https://huggingface.co/entropy/gpt2_zinc_87m): MGPT-2 based model (87M parameters) pretrained on ZINC dataset with ~480M SMILES strings.|
+|              | [RoBERTa-ZINC-480M](https://huggingface.co/entropy/roberta_zinc_480m): RoBERTa based model (102M parameters) pretrained on ZINC dataset with ~480M SMILES strings.|
+|              | [UniKi/bert-base-smiles](https://huggingface.co/unikei/bert-base-smiles): BERT model pretrained on SMILES strings.|
+|              | [ChemBERTa-zinc-base-v1](https://huggingface.co/seyonec/ChemBERTa-zinc-base-v1): RoBERTa model pretrained on ZINC dataset with ~100k SMILES strings.|
+|              | [ChemGPT series (1.2B/19M/4.7M)](https://huggingface.co/ncfrey/ChemGPT-1.2B): GPT-Neo based models pretrained on PubChem10M dataset with SELFIES strings.|
+|              | [ChemBERTa series](https://huggingface.co/DeepChem): Available in multiple sizes (77M/10M/5M) and training objectives (MTR/MLM).|
 ## Project Structure
 
 See the structure of `torch_molecule` with the command `tree -L 2 torch_molecule -I '__pycache__|*.pyc|*.pyo|.git|old*'`
